@@ -32,7 +32,7 @@ module.exports = function(grunt) {
     uglify: {
       options: {
         sourceMap: true,
-        sourceMapIncludeSources: true,
+        sourceMapIncludeSources: true
       },
       app:{
         files: {
@@ -69,7 +69,7 @@ module.exports = function(grunt) {
       scripts: {
         files: [
           'public/client/**/*.js',
-          'public/lib/**/*.js',
+          'public/lib/**/*.js'
         ],
         tasks: [
           'concat',
