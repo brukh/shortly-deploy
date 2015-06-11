@@ -3,12 +3,13 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     concat: {
-      app:{
+      client:{
         src: ['public/client/*.js'],
         dest:'public/dist/client.js'
       },
-      lib:{
-        src: ['public/lib/*.js'],
+      libs:{
+        //include underscore first - dependancy for backbone
+        src: ['public/lib/underscore.js', 'public/lib/jquery.js', 'public/lib/*.js'],
         dest: 'public/dist/libs.js'
       }
     },
@@ -29,10 +30,14 @@ module.exports = function(grunt) {
     },
 
     uglify: {
-      app: {
+      options: {
+        sourceMap: true,
+        sourceMapIncludeSources: true,
+      },
+      app:{
         files: {
-          'public/dist/client.js' : ['public/dist/client.js'],
-          'public/dist/libs.js' : ['public/dist/libs.js']
+          'public/dist/client.js' : ['<%= concat.client.dest %>'],
+          'public/dist/libs.js' : ['<%= concat.libs.dest %>']
         }
       }
     },
@@ -40,6 +45,7 @@ module.exports = function(grunt) {
     jshint: {
       files: [
         // Add filespec list here
+          'public/**/*.js'
       ],
       options: {
         force: 'true',
@@ -52,6 +58,11 @@ module.exports = function(grunt) {
     },
 
     cssmin: {
+      production: {
+        files: {
+          'public/dist/style.min.css' : ['public/style.css']
+        }
+      }
     },
 
     watch: {
@@ -75,6 +86,17 @@ module.exports = function(grunt) {
       prodServer: {
       }
     },
+
+    gitpush: {
+      production: {
+        options: {
+          remote: 'origin',
+          branch: 'master'
+        }
+      }
+
+    },
+
   });
 
   grunt.loadNpmTasks('grunt-contrib-uglify');
@@ -85,6 +107,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-nodemon');
+  grunt.loadNpmTasks('grunt-git');
 
   grunt.registerTask('server-dev', function (target) {
     // Running nodejs in a different process and displaying output on the main console
@@ -104,16 +127,19 @@ module.exports = function(grunt) {
   ////////////////////////////////////////////////////
 
   grunt.registerTask('test', [
-    'mochaTest'
+    'jshint', 'build', 'mochaTest'
   ]);
 
   grunt.registerTask('build', [
-    'concat', 'uglify'
+    'concat', 'uglify', 'cssmin'
   ]);
+
 
   grunt.registerTask('upload', function(n) {
     if(grunt.option('prod')) {
-      // add your production server task here
+      // push master branch to origin  (web hooks will deploy to azure)
+      grunt.task.run([ 'gitpush:production' ]);
+
     } else {
       grunt.task.run([ 'server-dev' ]);
     }
@@ -121,7 +147,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask('deploy', [
     // add your deploy tasks here
-    'build'
+    'test', 'upload'
   ]);
 
 
